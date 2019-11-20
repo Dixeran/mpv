@@ -274,16 +274,18 @@ struct MPContext *mp_create(void)
     mp_time_init();
 
     struct MPContext *mpctx = talloc(NULL, MPContext);
-    *mpctx = (struct MPContext){
-        .last_chapter = -2,
-        .term_osd_contents = talloc_strdup(mpctx, ""),
-        .osd_progbar = { .type = -1 },
-        .playlist = talloc_struct(mpctx, struct playlist, {0}),
-        .dispatch = mp_dispatch_create(mpctx),
-        .playback_abort = mp_cancel_new(mpctx),
-        .thread_pool = mp_thread_pool_create(mpctx, 0, 1, 30),
-        .stop_play = PT_STOP,
-        .play_dir = 1,
+	*mpctx = (struct MPContext){
+		.last_chapter = -2,
+		.term_osd_contents = talloc_strdup(mpctx, ""),
+		.osd_progbar = {.type = -1 },
+		.playlist = talloc_struct(mpctx, struct playlist, {0}),
+		.dispatch = mp_dispatch_create(mpctx),
+		.playback_abort = mp_cancel_new(mpctx),
+		.thread_pool = mp_thread_pool_create(mpctx, 0, 1, 30),
+		.stop_play = PT_STOP,
+		.play_dir = 1,
+		.custom_d3d11device = false,
+		.d3d11_device = NULL
     };
 
     pthread_mutex_init(&mpctx->abort_lock, NULL);

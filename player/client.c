@@ -62,25 +62,25 @@
  */
 
 struct mp_client_api {
-    struct MPContext *mpctx;
+	struct MPContext* mpctx;
 
-    pthread_mutex_t lock;
+	pthread_mutex_t lock;
 
-    atomic_bool uses_vo_libmpv;
+	atomic_bool uses_vo_libmpv;
 
-    // -- protected by lock
+	// -- protected by lock
 
-    struct mpv_handle **clients;
-    int num_clients;
-    bool shutting_down; // do not allow new clients
-    bool have_terminator; // a client took over the role of destroying the core
-    bool terminate_core_thread; // make libmpv core thread exit
+	struct mpv_handle** clients;
+	int num_clients;
+	bool shutting_down; // do not allow new clients
+	bool have_terminator; // a client took over the role of destroying the core
+	bool terminate_core_thread; // make libmpv core thread exit
 
-    struct mp_custom_protocol *custom_protocols;
-    int num_custom_protocols;
+	struct mp_custom_protocol* custom_protocols;
+	int num_custom_protocols;
 
-    struct mpv_render_context *render_context;
-    struct mpv_opengl_cb_context *gl_cb_ctx;
+	struct mpv_render_context* render_context;
+	struct mpv_opengl_cb_context* gl_cb_ctx;
 };
 
 struct observe_property {

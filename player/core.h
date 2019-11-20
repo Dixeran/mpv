@@ -434,6 +434,10 @@ typedef struct MPContext {
     // playback rate. Used to avoid showing it multiple times.
     bool drop_message_shown;
 
+	/* Set custom d3d11 device */
+	bool custom_d3d11device;
+	void* d3d11_device; // should be D3D11Device*
+
     struct mp_recorder *recorder;
 
     char *cached_watch_later_configdir;

@@ -58,3 +58,5 @@ mpv_unobserve_property
 mpv_wait_async_requests
 mpv_wait_event
 mpv_wakeup
+CheckExportDef
+mpv_set_custom_d3d11device

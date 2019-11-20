@@ -26,6 +26,8 @@
 #include "video/out/w32_common.h"
 #include "ra_d3d11.h"
 
+#include "custom_helper.h"
+
 static int d3d11_validate_adapter(struct mp_log *log,
                                   const struct m_option *opt,
                                   struct bstr name, struct bstr param);
@@ -375,8 +377,13 @@ static bool d3d11_init(struct ra_ctx *ctx)
         .max_frame_latency = ctx->vo->opts->swapchain_depth,
         .adapter_name = p->opts->adapter_name,
     };
-    if (!mp_d3d11_create_present_device(ctx->log, &dopts, &p->device))
-        goto error;
+	bool is_custom_d3d11 = is_custom_device(ctx->global);
+	if (is_custom_d3d11) {
+		// use custom d3d11 context
+		bind_device(ctx->global, &p->device);
+	}
+	else if (!mp_d3d11_create_present_device(ctx->log, &dopts, &p->device))
+		goto error;
 
     if (!spirv_compiler_init(ctx))
         goto error;
@@ -384,21 +391,22 @@ static bool d3d11_init(struct ra_ctx *ctx)
     if (!ctx->ra)
         goto error;
 
-    if (!vo_w32_init(ctx->vo))
+    if (!is_custom_d3d11 && !vo_w32_init(ctx->vo))
         goto error;
 
-    struct d3d11_swapchain_opts scopts = {
-        .window = vo_w32_hwnd(ctx->vo),
-        .width = ctx->vo->dwidth,
-        .height = ctx->vo->dheight,
-        .format = p->opts->output_format,
-        .color_space = p->opts->color_space,
-        .configured_csp = &p->swapchain_csp,
-        .flip = p->opts->flip,
-        // Add one frame for the backbuffer and one frame of "slack" to reduce
-        // contention with the window manager when acquiring the backbuffer
-        .length = ctx->vo->opts->swapchain_depth + 2,
-        .usage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
+	struct d3d11_swapchain_opts scopts = {
+		.window = vo_w32_hwnd(ctx->vo),
+		.width = ctx->vo->dwidth,
+		.height = ctx->vo->dheight,
+		.format = p->opts->output_format,
+		.color_space = p->opts->color_space,
+		.configured_csp = &p->swapchain_csp,
+		.flip = p->opts->flip,
+		// Add one frame for the backbuffer and one frame of "slack" to reduce
+		// contention with the window manager when acquiring the backbuffer
+		.length = ctx->vo->opts->swapchain_depth + 2,
+		.usage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
+		.d3d11_use_custom_device = is_custom_d3d11,
     };
     if (!mp_d3d11_create_swapchain(p->device, ctx->log, &scopts, &p->swapchain))
         goto error;

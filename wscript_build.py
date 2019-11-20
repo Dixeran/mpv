@@ -562,7 +562,11 @@ def build(ctx):
         ( "osdep/windows_utils.c",               "os-win32" ),
 
         ## tree_allocator
-        "ta/ta.c", "ta/ta_talloc.c", "ta/ta_utils.c"
+        "ta/ta.c", "ta/ta_talloc.c", "ta/ta_utils.c",
+
+		## customize
+		( "video/export_test.c" ),
+		( "video/out/d3d11/custom_helper.c" )
     ]
 
     if ctx.dependency_satisfied('win32-executable'):
