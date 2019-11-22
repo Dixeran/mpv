@@ -2331,7 +2331,7 @@ struct ra *ra_d3d11_create(ID3D11Device *dev, struct mp_log *log,
                            struct spirv_compiler *spirv)
 {
     HRESULT hr;
-
+	MessageBox(NULL, (LPCWSTR)L"create d3d11 ra", NULL, MB_OK);
     struct ra *ra = talloc_zero(NULL, struct ra);
     ra->log = log;
     ra->fns = &ra_fns_d3d11;
@@ -2347,7 +2347,9 @@ struct ra *ra_d3d11_create(ID3D11Device *dev, struct mp_log *log,
     p->spirv = spirv;
 
     int minor = 0;
+	MessageBox(NULL, (LPCWSTR)L"stage-1", NULL, MB_OK);
     ID3D11Device_AddRef(dev);
+	MessageBox(NULL, (LPCWSTR)L"stage0", NULL, MB_OK);
     p->dev = dev;
     ID3D11Device_GetImmediateContext(p->dev, &p->ctx);
     hr = ID3D11Device_QueryInterface(p->dev, &IID_ID3D11Device1,
@@ -2365,7 +2367,7 @@ struct ra *ra_d3d11_create(ID3D11Device *dev, struct mp_log *log,
     }
 
     MP_VERBOSE(ra, "Using Direct3D 11.%d runtime\n", minor);
-
+	MessageBox(NULL, (LPCWSTR)L"stage 1", NULL, MB_OK);
     p->fl = ID3D11Device_GetFeatureLevel(p->dev);
     if (p->fl >= D3D_FEATURE_LEVEL_11_0) {
         ra->max_texture_wh = D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION;
@@ -2393,7 +2395,7 @@ struct ra *ra_d3d11_create(ID3D11Device *dev, struct mp_log *log,
     } else {
         p->max_uavs = D3D11_PS_CS_UAV_REGISTER_COUNT;
     }
-
+	MessageBox(NULL, (LPCWSTR)L"stage2", NULL, MB_OK);
     if (ID3D11Device_GetCreationFlags(p->dev) & D3D11_CREATE_DEVICE_DEBUG)
         init_debug_layer(ra);
 
@@ -2405,6 +2407,8 @@ struct ra *ra_d3d11_create(ID3D11Device *dev, struct mp_log *log,
     // According to MSDN, the above texture sizes are just minimums and drivers
     // may support larger textures. See:
     // https://msdn.microsoft.com/en-us/library/windows/desktop/ff476874.aspx
+	MessageBox(NULL, (LPCWSTR)L"Before query dim", NULL, MB_OK);
+
     find_max_texture_dimension(ra);
     MP_VERBOSE(ra, "Maximum Texture2D size: %dx%d\n", ra->max_texture_wh,
                ra->max_texture_wh);
@@ -2413,6 +2417,7 @@ struct ra *ra_d3d11_create(ID3D11Device *dev, struct mp_log *log,
         MP_FATAL(ra, "Could not find D3DCompiler DLL\n");
         goto error;
     }
+	MessageBox(NULL, (LPCWSTR)L"after load d3d compiler", NULL, MB_OK);
 
     MP_VERBOSE(ra, "D3DCompiler version: %u.%u.%u.%u\n",
                p->d3d_compiler_ver.major, p->d3d_compiler_ver.minor,

@@ -15,6 +15,8 @@
  * License along with mpv.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <windows.h>
+
 #include "common/msg.h"
 #include "options/m_config.h"
 #include "osdep/timer.h"
@@ -89,20 +91,20 @@ const struct m_sub_options d3d11_conf = {
     .size = sizeof(struct d3d11_opts)
 };
 
-struct priv {
-    struct d3d11_opts *opts;
-
-    struct ra_tex *backbuffer;
-    ID3D11Device *device;
-    IDXGISwapChain *swapchain;
-    struct mp_colorspace swapchain_csp;
-
-    int64_t perf_freq;
-    unsigned last_sync_refresh_count;
-    int64_t last_sync_qpc_time;
-    int64_t vsync_duration_qpc;
-    int64_t last_submit_qpc;
-};
+//struct priv {
+//    struct d3d11_opts *opts;
+//
+//    struct ra_tex *backbuffer;
+//    ID3D11Device *device;
+//    IDXGISwapChain *swapchain;
+//    struct mp_colorspace swapchain_csp;
+//
+//    int64_t perf_freq;
+//    unsigned last_sync_refresh_count;
+//    int64_t last_sync_qpc_time;
+//    int64_t vsync_duration_qpc;
+//    int64_t last_submit_qpc;
+//};
 
 static int d3d11_validate_adapter(struct mp_log *log,
                                   const struct m_option *opt,
@@ -175,6 +177,8 @@ static bool resize(struct ra_ctx *ctx)
 
 static bool d3d11_reconfig(struct ra_ctx *ctx)
 {
+	MessageBox(NULL, (LPCWSTR)L"reconfig", NULL, MB_OK);
+	return true;
     vo_w32_config(ctx->vo);
     return resize(ctx);
 }
@@ -323,6 +327,9 @@ static void d3d11_get_vsync(struct ra_swapchain *sw, struct vo_vsync_info *info)
 
 static int d3d11_control(struct ra_ctx *ctx, int *events, int request, void *arg)
 {
+	// TODO: [d3d11] judge this
+	// MessageBox(NULL, (LPCWSTR)L"w32 control", NULL, MB_OK);
+	return VO_TRUE;
     int ret = vo_w32_control(ctx->vo, events, request, arg);
     if (*events & VO_EVENT_RESIZE) {
         if (!resize(ctx))
@@ -357,6 +364,7 @@ static const struct ra_swapchain_fns d3d11_swapchain = {
 
 static bool d3d11_init(struct ra_ctx *ctx)
 {
+	MessageBox(NULL, (LPCWSTR)L"Init d3d11", NULL, MB_OK);
     struct priv *p = ctx->priv = talloc_zero(ctx, struct priv);
     p->opts = mp_get_config_group(ctx, ctx->global, &d3d11_conf);
 
@@ -380,24 +388,26 @@ static bool d3d11_init(struct ra_ctx *ctx)
 	bool is_custom_d3d11 = is_custom_device(ctx->global);
 	if (is_custom_d3d11) {
 		// use custom d3d11 context
+		MessageBox(NULL, (LPCWSTR)L"bind device", NULL, MB_OK);
 		bind_device(ctx->global, &p->device);
 	}
 	else if (!mp_d3d11_create_present_device(ctx->log, &dopts, &p->device))
 		goto error;
-
+	
     if (!spirv_compiler_init(ctx))
         goto error;
     ctx->ra = ra_d3d11_create(p->device, ctx->log, ctx->spirv);
     if (!ctx->ra)
         goto error;
-
-    if (!is_custom_d3d11 && !vo_w32_init(ctx->vo))
+	MessageBox(NULL, (LPCWSTR)L"after create device", NULL, MB_OK);
+	if (is_custom_d3d11);
+	else if (!vo_w32_init(ctx->vo))
         goto error;
 
 	struct d3d11_swapchain_opts scopts = {
-		.window = vo_w32_hwnd(ctx->vo),
-		.width = ctx->vo->dwidth,
-		.height = ctx->vo->dheight,
+		.window = is_custom_d3d11 ? NULL : vo_w32_hwnd(ctx->vo), // vo -> w32 can be NULL
+		.width = /*ctx->vo->dwidth*/640,
+		.height = /*ctx->vo->dheight*/320,
 		.format = p->opts->output_format,
 		.color_space = p->opts->color_space,
 		.configured_csp = &p->swapchain_csp,
@@ -415,9 +425,11 @@ static bool d3d11_init(struct ra_ctx *ctx)
     if (!p->backbuffer)
         goto error;
 
+	MessageBox(NULL, (LPCWSTR)L"Init finshed", NULL, MB_OK);
     return true;
 
 error:
+	MessageBox(NULL, (LPCWSTR)L"init d3d11 error", NULL, MB_OK);
     d3d11_uninit(ctx);
     return false;
 }

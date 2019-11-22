@@ -253,6 +253,7 @@ void mp_dispatch_run(struct mp_dispatch_queue *queue,
 void mp_dispatch_queue_process(struct mp_dispatch_queue *queue, double timeout)
 {
     pthread_mutex_lock(&queue->lock);
+
     queue->wait = timeout > 0 ? mp_add_timeout(mp_time_us(), timeout) : 0;
     assert(!queue->in_process); // recursion not allowed
     queue->in_process = true;
@@ -260,9 +261,11 @@ void mp_dispatch_queue_process(struct mp_dispatch_queue *queue, double timeout)
     // Wake up thread which called mp_dispatch_lock().
     if (queue->lock_requests)
         pthread_cond_broadcast(&queue->cond);
+
     while (1) {
         if (queue->lock_requests) {
             // Block due to something having called mp_dispatch_lock().
+			// MessageBox(NULL, (LPCWSTR)L"Before lock", NULL, MB_OK);
             pthread_cond_wait(&queue->cond, &queue->lock);
         } else if (queue->head) {
             struct mp_dispatch_item *item = queue->head;
@@ -276,10 +279,11 @@ void mp_dispatch_queue_process(struct mp_dispatch_queue *queue, double timeout)
             // from mp_dispatch_lock(), which is done by locked=true.
             assert(!queue->locked);
             queue->locked = true;
+			//MessageBox(NULL, (LPCWSTR)L"Before unlock", NULL, MB_OK);
             pthread_mutex_unlock(&queue->lock);
-
+			//MessageBox(NULL, (LPCWSTR)L"After unlock", NULL, MB_OK);
             item->fn(item->fn_data);
-
+			//MessageBox(NULL, (LPCWSTR)L"After do sth", NULL, MB_OK);
             pthread_mutex_lock(&queue->lock);
             assert(queue->locked);
             queue->locked = false;
@@ -291,10 +295,12 @@ void mp_dispatch_queue_process(struct mp_dispatch_queue *queue, double timeout)
                 item->completed = true;
             }
         } else if (queue->wait > 0 && !queue->interrupted) {
+			// MessageBox(NULL, (LPCWSTR)L"Before wait", NULL, MB_OK);
             struct timespec ts = mp_time_us_to_timespec(queue->wait);
             if (pthread_cond_timedwait(&queue->cond, &queue->lock, &ts))
                 queue->wait = 0;
         } else {
+			// MessageBox(NULL, (LPCWSTR)L"break", NULL, MB_OK);
             break;
         }
     }

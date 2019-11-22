@@ -1016,15 +1016,18 @@ static void *vo_thread(void *ptr)
     if (r < 0)
         goto done;
 
+	MessageBox(NULL, (LPCWSTR)L"After preinit", NULL, MB_OK);
     read_opts(vo);
     update_display_fps(vo);
     vo_event(vo, VO_EVENT_WIN_STATE);
-
+	MessageBox(NULL, (LPCWSTR)L"stage 5", NULL, MB_OK);
     while (1) {
         mp_dispatch_queue_process(vo->in->dispatch, 0);
+		//MessageBox(NULL, (LPCWSTR)L"after dispatch", NULL, MB_OK);
         if (in->terminate)
             break;
         vo->driver->control(vo, VOCTRL_CHECK_EVENTS, NULL);
+		//MessageBox(NULL, (LPCWSTR)L"Before render frame", NULL, MB_OK);
         bool working = render_frame(vo);
         int64_t now = mp_time_us();
         int64_t wait_until = now + (working ? 0 : (int64_t)1e9);
@@ -1038,6 +1041,7 @@ static void *vo_thread(void *ptr)
                 wakeup_core(vo);
             }
         }
+		//MessageBox(NULL, (LPCWSTR)L"Stage x", NULL, MB_OK);
         if (vo->want_redraw && !in->want_redraw) {
             vo->want_redraw = false;
             in->want_redraw = true;
@@ -1063,6 +1067,7 @@ static void *vo_thread(void *ptr)
 
         wait_vo(vo, wait_until);
     }
+	MessageBox(NULL, (LPCWSTR)L"quiit", NULL, MB_OK);
     forget_frames(vo); // implicitly synchronized
     talloc_free(in->current_frame);
     in->current_frame = NULL;

@@ -7,6 +7,8 @@
 #include "../../../player/client.h"
 #include "../../../common/global.h"
 #include "../../../osdep/atomic.h"
+#include "../../out/vo.h"
+#include "../../out/gpu/context.h"
 
 struct mp_client_api {
 	struct MPContext* mpctx;
@@ -76,6 +78,33 @@ struct mpv_handle {
 	struct mp_log_buffer* messages;
 };
 
+struct gpu_priv {
+	struct mp_log* log;
+	struct ra_ctx* ctx;
+
+	char* context_name;
+	char* context_type;
+	struct ra_ctx_opts opts;
+	struct gl_video* renderer;
+
+	int events;
+};
+
+struct priv {
+	struct d3d11_opts* opts;
+
+	struct ra_tex* backbuffer;
+	ID3D11Device* device;
+	IDXGISwapChain* swapchain;
+	struct mp_colorspace swapchain_csp;
+
+	int64_t perf_freq;
+	unsigned last_sync_refresh_count;
+	int64_t last_sync_qpc_time;
+	int64_t vsync_duration_qpc;
+	int64_t last_submit_qpc;
+};
+
 /* Used by internal to determin if custom d3d11 device is injected. */
 bool is_custom_device(struct mpv_global* _global);
 
@@ -93,3 +122,5 @@ void* get_device(struct mpv_global* _global);
 
 /* Used by user to inject custom device */
 void mpv_set_custom_d3d11device(mpv_handle* ctx, ID3D11Device* d3d11device);
+
+IDXGISwapChain* mpv_get_swapchain(mpv_handle* ctx);
