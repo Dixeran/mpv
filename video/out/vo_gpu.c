@@ -229,31 +229,25 @@ static int control(struct vo *vo, uint32_t request, void *data)
         resize(vo);
         return true;
     }
-    //MessageBox(NULL, (LPCWSTR)L"Do Control2", NULL, MB_OK);
     int events = 0;
     int r = p->ctx->fns->control(p->ctx, &events, request, data);
     if (events & VO_EVENT_ICC_PROFILE_CHANGED)
     {
-        MessageBox(NULL, (LPCWSTR)L"Do Control icc", NULL, MB_OK);
         get_and_update_icc_profile(p);
         vo->want_redraw = true;
     }
     if (events & VO_EVENT_AMBIENT_LIGHTING_CHANGED)
     {
-        MessageBox(NULL, (LPCWSTR)L"Do Control amb", NULL, MB_OK);
         get_and_update_ambient_lighting(p);
         vo->want_redraw = true;
     }
-    //MessageBox(NULL, (LPCWSTR)L"Do Control3", NULL, MB_OK);
     events |= p->events;
     p->events = 0;
     if (events & VO_EVENT_RESIZE)
         resize(vo);
     if (events & VO_EVENT_EXPOSE)
         vo->want_redraw = true;
-    //MessageBox(NULL, (LPCWSTR)L"Do Control4", NULL, MB_OK);
     vo_event(vo, events);
-    //MessageBox(NULL, (LPCWSTR)L"Do Control3", NULL, MB_OK);
     return r;
 }
 

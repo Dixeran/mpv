@@ -617,7 +617,7 @@ static HRESULT create_swapchain_1_2(ID3D11Device *dev, IDXGIFactory2 *factory,
                                     bool flip, DXGI_FORMAT format,
                                     IDXGISwapChain **swapchain_out)
 {
-	MessageBox(NULL, (LPCWSTR)L"Init swapchain", NULL, MB_OK);
+	//MessageBox(NULL, (LPCWSTR)L"Init swapchain", NULL, MB_OK);
     IDXGISwapChain *swapchain = NULL;
     IDXGISwapChain1 *swapchain1 = NULL;
     HRESULT hr;
@@ -644,7 +644,7 @@ static HRESULT create_swapchain_1_2(ID3D11Device *dev, IDXGIFactory2 *factory,
 
 	// prevent using hwnd when use custom device
 	if (opts->d3d11_use_custom_device) {
-		MessageBox(NULL, (LPCWSTR)L"custom swapchain", NULL, MB_OK);
+		//MessageBox(NULL, (LPCWSTR)L"custom swapchain", NULL, MB_OK);
 		hr = IDXGIFactory2_CreateSwapChainForComposition(factory, (IUnknown*)dev, &desc, NULL, &swapchain1);
 	} else {
 		hr = IDXGIFactory2_CreateSwapChainForHwnd(factory, (IUnknown*)dev,
@@ -859,7 +859,7 @@ bool mp_d3d11_create_swapchain(ID3D11Device *dev, struct mp_log *log,
                                struct d3d11_swapchain_opts *opts,
                                IDXGISwapChain **swapchain_out)
 {
-	MessageBox(NULL, (LPCWSTR)L"create swapchain", NULL, MB_OK);
+	//MessageBox(NULL, (LPCWSTR)L"create swapchain", NULL, MB_OK);
     IDXGIDevice1 *dxgi_dev = NULL;
     IDXGIAdapter1 *adapter = NULL;
     IDXGIFactory1 *factory = NULL;

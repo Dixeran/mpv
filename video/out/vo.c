@@ -1016,7 +1016,7 @@ static void *vo_thread(void *ptr)
     if (r < 0)
         goto done;
 
-	MessageBox(NULL, (LPCWSTR)L"After preinit", NULL, MB_OK);
+	//MessageBox(NULL, (LPCWSTR)L"After preinit", NULL, MB_OK);
     read_opts(vo);
     update_display_fps(vo);
     vo_event(vo, VO_EVENT_WIN_STATE);
@@ -1063,7 +1063,7 @@ static void *vo_thread(void *ptr)
 
         wait_vo(vo, wait_until);
     }
-	MessageBox(NULL, (LPCWSTR)L"quiit", NULL, MB_OK);
+	//MessageBox(NULL, (LPCWSTR)L"quiit", NULL, MB_OK);
     forget_frames(vo); // implicitly synchronized
     talloc_free(in->current_frame);
     in->current_frame = NULL;

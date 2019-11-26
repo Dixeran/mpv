@@ -166,7 +166,7 @@ static bool resize(struct ra_ctx *ctx)
     hr = IDXGISwapChain_ResizeBuffers(p->swapchain, 0, ctx->vo->dwidth,
         ctx->vo->dheight, DXGI_FORMAT_UNKNOWN, 0);
     if (FAILED(hr)) {
-		MessageBox(NULL, L"Resize failed", NULL, MB_OK);
+		//MessageBox(NULL, L"Resize failed", NULL, MB_OK);
         MP_FATAL(ctx, "Couldn't resize swapchain: %s\n", mp_HRESULT_to_str(hr));
         return false;
     }
@@ -178,7 +178,7 @@ static bool resize(struct ra_ctx *ctx)
 
 static bool d3d11_reconfig(struct ra_ctx *ctx)
 {
-	MessageBox(NULL, (LPCWSTR)L"reconfig", NULL, MB_OK);
+	//MessageBox(NULL, (LPCWSTR)L"reconfig", NULL, MB_OK);
 	if (!is_custom_device2(ctx))
 		vo_w32_config(ctx->vo);
     return resize(ctx);
@@ -372,7 +372,7 @@ static const struct ra_swapchain_fns d3d11_swapchain = {
 
 static bool d3d11_init(struct ra_ctx *ctx)
 {
-	MessageBox(NULL, (LPCWSTR)L"Init d3d11", NULL, MB_OK);
+	//MessageBox(NULL, (LPCWSTR)L"Init d3d11", NULL, MB_OK);
     struct priv *p = ctx->priv = talloc_zero(ctx, struct priv);
     p->opts = mp_get_config_group(ctx, ctx->global, &d3d11_conf);
 
@@ -396,7 +396,7 @@ static bool d3d11_init(struct ra_ctx *ctx)
 	bool is_custom_d3d11 = is_custom_device(ctx->global);
 	if (is_custom_d3d11) {
 		// use custom d3d11 context
-		MessageBox(NULL, (LPCWSTR)L"bind device", NULL, MB_OK);
+		//MessageBox(NULL, (LPCWSTR)L"bind device", NULL, MB_OK);
 		bind_device(ctx->global, &p->device);
 	}
 	else if (!mp_d3d11_create_present_device(ctx->log, &dopts, &p->device))
@@ -432,11 +432,11 @@ static bool d3d11_init(struct ra_ctx *ctx)
     if (!p->backbuffer)
         goto error;
 
-	MessageBox(NULL, (LPCWSTR)L"Init finshed", NULL, MB_OK);
+	//MessageBox(NULL, (LPCWSTR)L"Init finshed", NULL, MB_OK);
     return true;
 
 error:
-	MessageBox(NULL, (LPCWSTR)L"init d3d11 error", NULL, MB_OK);
+	//MessageBox(NULL, (LPCWSTR)L"init d3d11 error", NULL, MB_OK);
     d3d11_uninit(ctx);
     return false;
 }
