@@ -638,9 +638,11 @@ static HRESULT create_swapchain_1_2(ID3D11Device *dev, IDXGIFactory2 *factory,
         desc.BufferCount = 1;
     }
 	// for custom swc
-	desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+	if (opts->d3d11_use_custom_device) {
+		desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+	}
 
-	// TODO: [D3D11] prevent using hwnd when use custom device
+	// prevent using hwnd when use custom device
 	if (opts->d3d11_use_custom_device) {
 		MessageBox(NULL, (LPCWSTR)L"custom swapchain", NULL, MB_OK);
 		hr = IDXGIFactory2_CreateSwapChainForComposition(factory, (IUnknown*)dev, &desc, NULL, &swapchain1);

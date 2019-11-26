@@ -1,5 +1,8 @@
 #include "custom_helper.h"
 
+static d3d11_comp_opts* comp_opts;
+static bool new_resize_event = false;
+
 bool is_custom_device(struct mpv_global* _global)
 {
 	MPContext* mpctx = _global->client_api->mpctx;
@@ -7,6 +10,12 @@ bool is_custom_device(struct mpv_global* _global)
 		return true;
 	}
 	return false;
+}
+
+bool is_custom_device2(struct ra_ctx* ctx)
+{
+	struct mpv_global* glob = ctx->global;
+	return glob->client_api->mpctx->custom_d3d11device;
 }
 
 bool bind_device(struct mpv_global* _global, ID3D11Device** _dev)
@@ -40,4 +49,36 @@ IDXGISwapChain* mpv_get_swapchain(mpv_handle* ctx)
 	struct gpu_priv* p = mpctx->video_out->priv;
 	struct ra_swapchain* sw = p->ctx->swapchain;
 	return sw->priv->swapchain;
+}
+
+void mpv_bind_d3d11_comp_opts(d3d11_comp_opts* opts)
+{
+	if (opts != NULL)
+		comp_opts = opts;
+}
+
+void mpv_invoke_d3d11_resize(void)
+{
+	new_resize_event = true;
+}
+
+/*
+	Following methods are designed to replace w32 function.
+*/
+
+int d3d11_comp_control(struct vo* vo, int* events, int request, void* arg)
+{
+	if (comp_opts != NULL && new_resize_event) {
+		*events |= VO_EVENT_RESIZE;
+		vo->dwidth = comp_opts->width;
+		vo->dheight = comp_opts->height;
+
+		new_resize_event = false;
+	}
+	return VO_TRUE;
+}
+
+void d3d11_comp_uninit(void)
+{
+	// do nothing
 }

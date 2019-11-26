@@ -44,7 +44,8 @@
 #include "gpu/hwdec.h"
 #include "gpu/video.h"
 
-struct gpu_priv {
+struct gpu_priv
+{
     struct mp_log *log;
     struct ra_ctx *ctx;
 
@@ -87,7 +88,8 @@ static void draw_frame(struct vo *vo, struct vo_frame *frame)
         return;
 
     gl_video_render_frame(p->renderer, frame, fbo, RENDER_FRAME_DEF);
-    if (!sw->fns->submit_frame(sw, frame)) {
+    if (!sw->fns->submit_frame(sw, frame))
+    {
         MP_ERR(vo, "Failed presenting frame!\n");
         return;
     }
@@ -145,15 +147,20 @@ static void call_request_hwdec_api(void *ctx)
 
 static void get_and_update_icc_profile(struct gpu_priv *p)
 {
-    if (gl_video_icc_auto_enabled(p->renderer)) {
+    if (gl_video_icc_auto_enabled(p->renderer))
+    {
         MP_VERBOSE(p, "Querying ICC profile...\n");
         bstr icc = bstr0(NULL);
         int r = p->ctx->fns->control(p->ctx, &p->events, VOCTRL_GET_ICC_PROFILE, &icc);
 
-        if (r != VO_NOTAVAIL) {
-            if (r == VO_FALSE) {
+        if (r != VO_NOTAVAIL)
+        {
+            if (r == VO_FALSE)
+            {
                 MP_WARN(p, "Could not retrieve an ICC profile.\n");
-            } else if (r == VO_NOTIMPL) {
+            }
+            else if (r == VO_NOTIMPL)
+            {
                 MP_ERR(p, "icc-profile-auto not implemented on this platform.\n");
             }
 
@@ -166,10 +173,12 @@ static void get_and_update_ambient_lighting(struct gpu_priv *p)
 {
     int lux;
     int r = p->ctx->fns->control(p->ctx, &p->events, VOCTRL_GET_AMBIENT_LUX, &lux);
-    if (r == VO_TRUE) {
+    if (r == VO_TRUE)
+    {
         gl_video_set_ambient_lux(p->renderer, lux);
     }
-    if (r != VO_TRUE && gl_video_gamma_auto_enabled(p->renderer)) {
+    if (r != VO_TRUE && gl_video_gamma_auto_enabled(p->renderer))
+    {
         MP_ERR(p, "gamma_auto option provided, but querying for ambient"
                   " lighting is not supported on this platform\n");
     }
@@ -177,18 +186,18 @@ static void get_and_update_ambient_lighting(struct gpu_priv *p)
 
 static int control(struct vo *vo, uint32_t request, void *data)
 {
-	//TODO
-	//MessageBox(NULL, (LPCWSTR)L"Do Control", NULL, MB_OK);
     struct gpu_priv *p = vo->priv;
 
-    switch (request) {
+    switch (request)
+    {
     case VOCTRL_SET_PANSCAN:
         resize(vo);
         return VO_TRUE;
     case VOCTRL_SET_EQUALIZER:
         vo->want_redraw = true;
         return VO_TRUE;
-    case VOCTRL_SCREENSHOT: {
+    case VOCTRL_SCREENSHOT:
+    {
         struct vo_frame *frame = vo_get_current_vo_frame(vo);
         if (frame)
             gl_video_screenshot(p->renderer, frame, data);
@@ -198,7 +207,8 @@ static int control(struct vo *vo, uint32_t request, void *data)
     case VOCTRL_LOAD_HWDEC_API:
         request_hwdec_api(vo);
         return true;
-    case VOCTRL_UPDATE_RENDER_OPTS: {
+    case VOCTRL_UPDATE_RENDER_OPTS:
+    {
         gl_video_configure_queue(p->renderer, vo);
         get_and_update_icc_profile(p);
         vo->want_redraw = true;
@@ -219,29 +229,31 @@ static int control(struct vo *vo, uint32_t request, void *data)
         resize(vo);
         return true;
     }
-	//MessageBox(NULL, (LPCWSTR)L"Do Control2", NULL, MB_OK);
+    //MessageBox(NULL, (LPCWSTR)L"Do Control2", NULL, MB_OK);
     int events = 0;
     int r = p->ctx->fns->control(p->ctx, &events, request, data);
-    if (events & VO_EVENT_ICC_PROFILE_CHANGED) {
-		MessageBox(NULL, (LPCWSTR)L"Do Control icc", NULL, MB_OK);
+    if (events & VO_EVENT_ICC_PROFILE_CHANGED)
+    {
+        MessageBox(NULL, (LPCWSTR)L"Do Control icc", NULL, MB_OK);
         get_and_update_icc_profile(p);
         vo->want_redraw = true;
     }
-    if (events & VO_EVENT_AMBIENT_LIGHTING_CHANGED) {
-		MessageBox(NULL, (LPCWSTR)L"Do Control amb", NULL, MB_OK);
+    if (events & VO_EVENT_AMBIENT_LIGHTING_CHANGED)
+    {
+        MessageBox(NULL, (LPCWSTR)L"Do Control amb", NULL, MB_OK);
         get_and_update_ambient_lighting(p);
         vo->want_redraw = true;
     }
-	//MessageBox(NULL, (LPCWSTR)L"Do Control3", NULL, MB_OK);
+    //MessageBox(NULL, (LPCWSTR)L"Do Control3", NULL, MB_OK);
     events |= p->events;
     p->events = 0;
     if (events & VO_EVENT_RESIZE)
         resize(vo);
     if (events & VO_EVENT_EXPOSE)
         vo->want_redraw = true;
-	//MessageBox(NULL, (LPCWSTR)L"Do Control4", NULL, MB_OK);
+    //MessageBox(NULL, (LPCWSTR)L"Do Control4", NULL, MB_OK);
     vo_event(vo, events);
-	//MessageBox(NULL, (LPCWSTR)L"Do Control3", NULL, MB_OK);
+    //MessageBox(NULL, (LPCWSTR)L"Do Control3", NULL, MB_OK);
     return r;
 }
 
@@ -255,9 +267,12 @@ static void wakeup(struct vo *vo)
 static void wait_events(struct vo *vo, int64_t until_time_us)
 {
     struct gpu_priv *p = vo->priv;
-    if (p->ctx && p->ctx->fns->wait_events) {
+    if (p->ctx && p->ctx->fns->wait_events)
+    {
         p->ctx->fns->wait_events(p->ctx, until_time_us);
-    } else {
+    }
+    else
+    {
         vo_wait_default(vo, until_time_us);
     }
 }
@@ -275,7 +290,8 @@ static void uninit(struct vo *vo)
     struct gpu_priv *p = vo->priv;
 
     gl_video_uninit(p->renderer);
-    if (vo->hwdec_devs) {
+    if (vo->hwdec_devs)
+    {
         hwdec_devices_set_loader(vo->hwdec_devs, NULL, NULL);
         hwdec_devices_destroy(vo->hwdec_devs);
     }
@@ -323,8 +339,7 @@ static const m_option_t options[] = {
     OPT_STRING_VALIDATE("gpu-api", context_type, 0, ra_ctx_validate_api),
     OPT_FLAG("gpu-debug", opts.debug, 0),
     OPT_FLAG("gpu-sw", opts.allow_sw, 0),
-    {0}
-};
+    {0}};
 
 const struct vo_driver video_out_gpu = {
     .description = "Shader-based GPU Renderer",

@@ -166,6 +166,7 @@ static bool resize(struct ra_ctx *ctx)
     hr = IDXGISwapChain_ResizeBuffers(p->swapchain, 0, ctx->vo->dwidth,
         ctx->vo->dheight, DXGI_FORMAT_UNKNOWN, 0);
     if (FAILED(hr)) {
+		MessageBox(NULL, L"Resize failed", NULL, MB_OK);
         MP_FATAL(ctx, "Couldn't resize swapchain: %s\n", mp_HRESULT_to_str(hr));
         return false;
     }
@@ -178,8 +179,8 @@ static bool resize(struct ra_ctx *ctx)
 static bool d3d11_reconfig(struct ra_ctx *ctx)
 {
 	MessageBox(NULL, (LPCWSTR)L"reconfig", NULL, MB_OK);
-	return true;
-    vo_w32_config(ctx->vo);
+	if (!is_custom_device2(ctx))
+		vo_w32_config(ctx->vo);
     return resize(ctx);
 }
 
@@ -327,10 +328,12 @@ static void d3d11_get_vsync(struct ra_swapchain *sw, struct vo_vsync_info *info)
 
 static int d3d11_control(struct ra_ctx *ctx, int *events, int request, void *arg)
 {
-	// TODO: [d3d11] judge this
-	// MessageBox(NULL, (LPCWSTR)L"w32 control", NULL, MB_OK);
-	return VO_TRUE;
-    int ret = vo_w32_control(ctx->vo, events, request, arg);
+	int ret = -1;
+	if (!is_custom_device2(ctx))
+		ret = vo_w32_control(ctx->vo, events, request, arg);
+	else
+		ret = d3d11_comp_control(ctx->vo, events, request, arg);
+	// events maybe add a VO_EVENT_RESIZE flag by last call up there.
     if (*events & VO_EVENT_RESIZE) {
         if (!resize(ctx))
             return VO_ERROR;
@@ -345,8 +348,13 @@ static void d3d11_uninit(struct ra_ctx *ctx)
     if (ctx->ra)
         ra_tex_free(ctx->ra, &p->backbuffer);
     SAFE_RELEASE(p->swapchain);
-    vo_w32_uninit(ctx->vo);
-    SAFE_RELEASE(p->device);
+	if (is_custom_device2(ctx)) {
+		vo_w32_uninit(ctx->vo);
+		SAFE_RELEASE(p->device);
+	}
+	else {
+		d3d11_comp_uninit();
+	}
 
     // Destory the RA last to prevent objects we hold from showing up in D3D's
     // leak checker
@@ -399,15 +407,14 @@ static bool d3d11_init(struct ra_ctx *ctx)
     ctx->ra = ra_d3d11_create(p->device, ctx->log, ctx->spirv);
     if (!ctx->ra)
         goto error;
-	MessageBox(NULL, (LPCWSTR)L"after create device", NULL, MB_OK);
 	if (is_custom_d3d11);
 	else if (!vo_w32_init(ctx->vo))
         goto error;
 
 	struct d3d11_swapchain_opts scopts = {
 		.window = is_custom_d3d11 ? NULL : vo_w32_hwnd(ctx->vo), // vo -> w32 can be NULL
-		.width = /*ctx->vo->dwidth*/640,
-		.height = /*ctx->vo->dheight*/320,
+		.width = ctx->vo->dwidth,
+		.height = ctx->vo->dheight,
 		.format = p->opts->output_format,
 		.color_space = p->opts->color_space,
 		.configured_csp = &p->swapchain_csp,

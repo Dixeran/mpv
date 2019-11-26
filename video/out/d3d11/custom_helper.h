@@ -107,6 +107,7 @@ struct priv {
 
 /* Used by internal to determin if custom d3d11 device is injected. */
 bool is_custom_device(struct mpv_global* _global);
+bool is_custom_device2(struct ra_ctx* ctx);
 
 /* Used by internal to set device from MPContext. */
 bool bind_device(struct mpv_global* _global, ID3D11Device** _dev);
@@ -114,13 +115,26 @@ bool bind_device(struct mpv_global* _global, ID3D11Device** _dev);
 /* Used by internal to get custom device's pointer if injected. */
 void* get_device(struct mpv_global* _global);
 
+/* struct to keep track of composition status */
+typedef struct d3d11_comp_opts {
+	int width;
+	int height;
+	bool is_fullscreen;
+} d3d11_comp_opts;
 
-//bool custom_d3d11_create_swapchain();
+int d3d11_comp_control(struct vo* vo, int* events, int request, void* arg);
+void d3d11_comp_uninit(void);
 
 
-/* Following functions should be export. */
+/* 
+ * --- Following functions should be export. --- 
+ */
 
 /* Used by user to inject custom device */
 void mpv_set_custom_d3d11device(mpv_handle* ctx, ID3D11Device* d3d11device);
 
 IDXGISwapChain* mpv_get_swapchain(mpv_handle* ctx);
+
+void mpv_bind_d3d11_comp_opts(d3d11_comp_opts* opts);
+
+void mpv_invoke_d3d11_resize(void);

@@ -61,3 +61,5 @@ mpv_wakeup
 CheckExportDef
 mpv_set_custom_d3d11device
 mpv_get_swapchain
+mpv_bind_d3d11_comp_opts
+mpv_invoke_d3d11_resize
