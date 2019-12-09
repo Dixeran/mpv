@@ -58,3 +58,4 @@ mpv_unobserve_property
 mpv_wait_async_requests
 mpv_wait_event
 mpv_wakeup
+mpv_get_swapchain
