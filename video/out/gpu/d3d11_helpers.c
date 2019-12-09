@@ -679,6 +679,50 @@ static HRESULT create_swapchain_1_1(ID3D11Device *dev, IDXGIFactory1 *factory,
                                          swapchain_out);
 }
 
+// create swapchain for composition instead of Hwnd
+static HRESULT create_swapchain_headless(ID3D11Device* dev, IDXGIFactory2* factory,
+    struct mp_log* log,
+    struct d3d11_swapchain_opts* opts,
+    bool flip, DXGI_FORMAT format,
+    IDXGISwapChain** swapchain_out)
+{
+    IDXGISwapChain* swapchain = NULL;
+    IDXGISwapChain1* swapchain1 = NULL;
+    HRESULT hr;
+
+    DXGI_SWAP_CHAIN_DESC1 desc = {
+        .Width = opts->width ? opts->width : 1,
+        .Height = opts->height ? opts->height : 1,
+        .Format = format,
+        .SampleDesc = {.Count = 1 },
+        .BufferUsage = opts->usage,
+    };
+
+    // has to be flip
+    desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+    desc.BufferCount = opts->length;
+
+
+    // TODO: replace this
+    //hr = IDXGIFactory2_CreateSwapChainForHwnd(factory, (IUnknown*)dev,
+    //    opts->window, &desc, NULL, NULL, &swapchain1);
+    hr = IDXGIFactory2_CreateSwapChainForComposition(factory, (IUnknown*)dev, &desc, NULL, &swapchain1);
+    if (FAILED(hr))
+        goto done;
+    hr = IDXGISwapChain1_QueryInterface(swapchain1, &IID_IDXGISwapChain,
+        (void**)&swapchain);
+    if (FAILED(hr))
+        goto done;
+
+    *swapchain_out = swapchain;
+    swapchain = NULL;
+
+done:
+    SAFE_RELEASE(swapchain1);
+    SAFE_RELEASE(swapchain);
+    return hr;
+}
+
 static bool update_swapchain_format(struct mp_log *log,
                                     IDXGISwapChain *swapchain,
                                     DXGI_FORMAT format)
@@ -924,6 +968,114 @@ bool mp_d3d11_create_swapchain(ID3D11Device *dev, struct mp_log *log,
     if (scd.SwapEffect == DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL) {
         mp_verbose(log, "Using flip-model presentation\n");
     } else {
+        mp_verbose(log, "Using bitblt-model presentation\n");
+    }
+
+    *swapchain_out = swapchain;
+    swapchain = NULL;
+    success = true;
+
+done:
+    SAFE_RELEASE(swapchain);
+    SAFE_RELEASE(factory2);
+    SAFE_RELEASE(factory);
+    SAFE_RELEASE(adapter);
+    SAFE_RELEASE(dxgi_dev);
+    return success;
+}
+
+// Create a Direct3D 11 headless swapchain
+bool mp_d3d11_create_swapchain_headless(ID3D11Device* dev, struct mp_log* log,
+    struct d3d11_swapchain_opts* opts,
+    IDXGISwapChain** swapchain_out)
+{
+    IDXGIDevice1* dxgi_dev = NULL;
+    IDXGIAdapter1* adapter = NULL;
+    IDXGIFactory1* factory = NULL;
+    IDXGIFactory2* factory2 = NULL;
+    IDXGISwapChain* swapchain = NULL;
+    bool success = false;
+    HRESULT hr;
+
+    hr = ID3D11Device_QueryInterface(dev, &IID_IDXGIDevice1, (void**)&dxgi_dev);
+    if (FAILED(hr)) {
+        mp_fatal(log, "Failed to get DXGI device\n");
+        goto done;
+    }
+    hr = IDXGIDevice1_GetParent(dxgi_dev, &IID_IDXGIAdapter1, (void**)&adapter);
+    if (FAILED(hr)) {
+        mp_fatal(log, "Failed to get DXGI adapter\n");
+        goto done;
+    }
+    hr = IDXGIAdapter1_GetParent(adapter, &IID_IDXGIFactory1, (void**)&factory);
+    if (FAILED(hr)) {
+        mp_fatal(log, "Failed to get DXGI factory\n");
+        goto done;
+    }
+    hr = IDXGIFactory1_QueryInterface(factory, &IID_IDXGIFactory2,
+        (void**)&factory2);
+    if (FAILED(hr))
+        factory2 = NULL;
+
+    bool flip = factory2 && opts->flip;
+
+    // Return here to retry creating the swapchain
+    //do {
+    //    if (factory2) {
+    //        // Create a DXGI 1.2+ (Windows 8+) swap chain if possible
+    //        hr = create_swapchain_1_2(dev, factory2, log, opts, flip,
+    //            DXGI_FORMAT_R8G8B8A8_UNORM, &swapchain);
+    //    }
+    //    else {
+    //        // Fall back to DXGI 1.1 (Windows 7)
+    //        hr = create_swapchain_1_1(dev, factory, log, opts,
+    //            DXGI_FORMAT_R8G8B8A8_UNORM, &swapchain);
+    //    }
+    //    if (SUCCEEDED(hr))
+    //        break;
+
+    //    if (flip) {
+    //        mp_dbg(log, "Failed to create flip-model swapchain, trying bitblt\n");
+    //        flip = false;
+    //        continue;
+    //    }
+
+    //    mp_fatal(log, "Failed to create swapchain: %s\n", mp_HRESULT_to_str(hr));
+    //    goto done;
+    //} while (true);
+
+    if (factory2) {
+        hr = create_swapchain_headless(dev, factory2, log, opts, flip,
+            DXGI_FORMAT_R8G8B8A8_UNORM, &swapchain);
+        if (!SUCCEEDED(hr)) {
+            mp_fatal(log, "Failed to create headless swapchain: %s\n", mp_HRESULT_to_str(hr));
+        }
+    }
+
+    // Prevent DXGI from making changes to the VO window, otherwise it will
+    // hook the Alt+Enter keystroke and make it trigger an ugly transition to
+    // exclusive fullscreen mode instead of running the user-set command.
+    IDXGIFactory_MakeWindowAssociation(factory, opts->window,
+        DXGI_MWA_NO_WINDOW_CHANGES | DXGI_MWA_NO_ALT_ENTER |
+        DXGI_MWA_NO_PRINT_SCREEN);
+
+    if (factory2) {
+        mp_verbose(log, "Using DXGI 1.2+\n");
+    }
+    else {
+        mp_verbose(log, "Using DXGI 1.1\n");
+    }
+
+    configure_created_swapchain(log, swapchain, opts->format,
+        opts->color_space,
+        opts->configured_csp);
+
+    DXGI_SWAP_CHAIN_DESC scd = { 0 };
+    IDXGISwapChain_GetDesc(swapchain, &scd);
+    if (scd.SwapEffect == DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL) {
+        mp_verbose(log, "Using flip-model presentation\n");
+    }
+    else {
         mp_verbose(log, "Using bitblt-model presentation\n");
     }
 

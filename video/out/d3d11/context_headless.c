@@ -43,53 +43,6 @@ struct d3d11_opts {
 
 const extern struct m_sub_options d3d11_conf;
 
-//#define OPT_BASE_STRUCT struct d3d11_hl_opts
-//const struct m_sub_options d3d11_hl_conf = {
-//    .opts = (const struct m_option[]) {
-//        OPT_CHOICE("d3d11-warp", warp, 0,
-//                   ({"auto", -1},
-//                    {"no", 0},
-//                    {"yes", 1})),
-//        OPT_CHOICE("d3d11-feature-level", feature_level, 0,
-//                   ({"12_1", D3D_FEATURE_LEVEL_12_1},
-//                    {"12_0", D3D_FEATURE_LEVEL_12_0},
-//                    {"11_1", D3D_FEATURE_LEVEL_11_1},
-//                    {"11_0", D3D_FEATURE_LEVEL_11_0},
-//                    {"10_1", D3D_FEATURE_LEVEL_10_1},
-//                    {"10_0", D3D_FEATURE_LEVEL_10_0},
-//                    {"9_3", D3D_FEATURE_LEVEL_9_3},
-//                    {"9_2", D3D_FEATURE_LEVEL_9_2},
-//                    {"9_1", D3D_FEATURE_LEVEL_9_1})),
-//        OPT_FLAG("d3d11-flip", flip, 0),
-//        OPT_INTRANGE("d3d11-sync-interval", sync_interval, 0, 0, 4),
-//        OPT_STRING_VALIDATE("d3d11-adapter", adapter_name, 0,
-//                            d3d11_validate_adapter),
-//        OPT_CHOICE("d3d11-output-format", output_format, 0,
-//                   ({"auto",     DXGI_FORMAT_UNKNOWN},
-//                    {"rgba8",    DXGI_FORMAT_R8G8B8A8_UNORM},
-//                    {"bgra8",    DXGI_FORMAT_B8G8R8A8_UNORM},
-//                    {"rgb10_a2", DXGI_FORMAT_R10G10B10A2_UNORM},
-//                    {"rgba16f",  DXGI_FORMAT_R16G16B16A16_FLOAT})),
-//        OPT_CHOICE("d3d11-output-csp", color_space, 0,
-//                   ({"auto", -1},
-//                    {"srgb",    DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709},
-//                    {"linear",  DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709},
-//                    {"pq",      DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020},
-//                    {"bt.2020", DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P2020})),
-//        {0}
-//    },
-//    .defaults = &(const struct d3d11_hl_opts) {
-//        .feature_level = D3D_FEATURE_LEVEL_12_1,
-//        .warp = -1,
-//        .flip = 1,
-//        .sync_interval = 1,
-//        .adapter_name = NULL,
-//        .output_format = DXGI_FORMAT_UNKNOWN,
-//        .color_space = -1,
-//    },
-//    .size = sizeof(struct d3d11_opts)
-//};
-
 struct priv {
     struct d3d11_opts* opts;
 
@@ -177,7 +130,7 @@ static bool resize(struct ra_ctx* ctx)
 static bool d3d11_hl_reconfig(struct ra_ctx* ctx)
 {
     MessageBox(NULL, L"custom driver reconfig", NULL, MB_OK);
-    vo_w32_config(ctx->vo);
+    //vo_w32_config(ctx->vo);
     return resize(ctx);
 }
 
@@ -325,13 +278,13 @@ static void d3d11_get_vsync(struct ra_swapchain* sw, struct vo_vsync_info* info)
 
 static int d3d11_hl_control(struct ra_ctx* ctx, int* events, int request, void* arg)
 {
-    // TODO: bypass
-    int ret = vo_w32_control(ctx->vo, events, request, arg);
+    // TODO: bypass and generate resize event
+    //int ret = vo_w32_control(ctx->vo, events, request, arg);
     if (*events & VO_EVENT_RESIZE) {
         if (!resize(ctx))
             return VO_ERROR;
     }
-    return ret;
+    return VO_TRUE;
 }
 
 static void d3d11_hl_uninit(struct ra_ctx* ctx)
@@ -342,7 +295,7 @@ static void d3d11_hl_uninit(struct ra_ctx* ctx)
         ra_tex_free(ctx->ra, &p->backbuffer);
     SAFE_RELEASE(p->swapchain);
     // TODO: bypass
-    vo_w32_uninit(ctx->vo);
+    //vo_w32_uninit(ctx->vo);
     SAFE_RELEASE(p->device);
 
     // Destory the RA last to prevent objects we hold from showing up in D3D's
@@ -351,7 +304,6 @@ static void d3d11_hl_uninit(struct ra_ctx* ctx)
         ctx->ra->fns->destroy(ctx->ra);
 }
 
-// TODO: this can be reuse
 static const struct ra_swapchain_fns d3d11_swapchain = {
     .color_depth = d3d11_color_depth,
     .start_frame = d3d11_start_frame,
@@ -395,14 +347,14 @@ static bool d3d11_hl_init(struct ra_ctx* ctx)
     if (!ctx->ra)
         goto error;
 
-    //TODO: bypass vo_w32
-    if (!vo_w32_init(ctx->vo))
-        goto error;
+    //bypass vo_w32
+    //if (!vo_w32_init(ctx->vo))
+    //    goto error;
 
     struct d3d11_swapchain_opts scopts = {
-        .window = vo_w32_hwnd(ctx->vo),
-        .width = ctx->vo->dwidth,
-        .height = ctx->vo->dheight,
+        .window = NULL,
+        .width = /*ctx->vo->dwidth*/720,
+        .height = /*ctx->vo->dheight*/480,
         .format = p->opts->output_format,
         .color_space = p->opts->color_space,
         .configured_csp = &p->swapchain_csp,
@@ -423,6 +375,7 @@ static bool d3d11_hl_init(struct ra_ctx* ctx)
     return true;
 
 error:
+    MessageBox(NULL, L"Init headless error", NULL, MB_OK);
     d3d11_hl_uninit(ctx);
     return false;
 }

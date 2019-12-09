@@ -100,4 +100,7 @@ bool mp_d3d11_create_swapchain(ID3D11Device *dev, struct mp_log *log,
                                struct d3d11_swapchain_opts *opts,
                                IDXGISwapChain **swapchain_out);
 
+bool mp_d3d11_create_swapchain_headless(ID3D11Device* dev, struct mp_log* log,
+    struct d3d11_swapchain_opts* opts,
+    IDXGISwapChain** swapchain_out);
 #endif
