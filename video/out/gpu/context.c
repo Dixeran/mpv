@@ -53,10 +53,12 @@ extern const struct ra_ctx_fnd ra_ctx_vulkan_android;
 
 /* Direct3D 11 */
 extern const struct ra_ctx_fns ra_ctx_d3d11;
+extern const struct ra_ctx_fns ra_ctx_d3d11_headless;
 
 static const struct ra_ctx_fns *contexts[] = {
 #if HAVE_D3D11
     &ra_ctx_d3d11,
+    &ra_ctx_d3d11_headless,
 #endif
 
 // OpenGL contexts:

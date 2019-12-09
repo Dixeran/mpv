@@ -435,6 +435,7 @@ def build(ctx):
         ( "video/out/d3d11/hwdec_d3d11va.c",     "d3d11 && d3d-hwaccel" ),
         ( "video/out/d3d11/hwdec_dxva2dxgi.c",   "d3d11 && d3d9-hwaccel" ),
         ( "video/out/d3d11/ra_d3d11.c",          "d3d11" ),
+        ( "video/out/d3d11/context_headless.c",  "d3d11" ),
         ( "video/out/dither.c" ),
         ( "video/out/dr_helper.c" ),
         ( "video/out/drm_atomic.c",              "drm" ),
