@@ -110,6 +110,7 @@ struct mpv_render_context {
 };
 
 const struct render_backend_fns *render_backends[] = {
+    &render_backend_d3d11_headless,
     &render_backend_gpu,
     NULL
 };

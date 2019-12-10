@@ -355,6 +355,7 @@ typedef struct mpv_render_param {
  * Predefined values for MPV_RENDER_PARAM_API_TYPE.
  */
 #define MPV_RENDER_API_TYPE_OPENGL "opengl"
+#define MPV_RENDER_API_TYPE_D3D11_HEADLESS "d3d11_headless"
 
 /**
  * Flags used in mpv_render_frame_info.flags. Each value represents a bit in it.
