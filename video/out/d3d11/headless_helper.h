@@ -10,6 +10,29 @@
 #include "osdep/atomic.h"
 #include "video/out/vo.h"
 #include "video/out/gpu/context.h"
+#include "video/out/libmpv.h"
+
+struct mp_client_api {
+    struct MPContext* mpctx;
+
+    pthread_mutex_t lock;
+
+    atomic_bool uses_vo_libmpv;
+
+    // -- protected by lock
+
+    struct mpv_handle** clients;
+    int num_clients;
+    bool shutting_down; // do not allow new clients
+    bool have_terminator; // a client took over the role of destroying the core
+    bool terminate_core_thread; // make libmpv core thread exit
+
+    struct mp_custom_protocol* custom_protocols;
+    int num_custom_protocols;
+
+    struct mpv_render_context* render_context;
+    struct mpv_opengl_cb_context* gl_cb_ctx;
+};
 
 struct mpv_handle {
     // -- immmutable
@@ -83,6 +106,67 @@ struct priv {
     int64_t vsync_duration_qpc;
     int64_t last_submit_qpc;
 };
+
+struct mpv_render_context {
+    struct mp_log* log;
+    struct mpv_global* global;
+    struct mp_client_api* client_api;
+
+    atomic_bool in_use;
+
+    // --- Immutable after init
+    struct mp_dispatch_queue* dispatch;
+    bool advanced_control;
+    struct dr_helper* dr;           // NULL if advanced_control disabled
+
+    pthread_mutex_t control_lock;
+    // --- Protected by control_lock
+    mp_render_cb_control_fn control_cb;
+    void* control_cb_ctx;
+
+    pthread_mutex_t update_lock;
+    pthread_cond_t update_cond;     // paired with update_lock
+
+    // --- Protected by update_lock
+    mpv_render_update_fn update_cb;
+    void* update_cb_ctx;
+
+    pthread_mutex_t lock;
+    pthread_cond_t video_wait;      // paired with lock
+
+    // --- Protected by lock
+    struct vo_frame* next_frame;    // next frame to draw
+    int64_t present_count;          // incremented when next frame can be shown
+    int64_t expected_flip_count;    // next vsync event for next_frame
+    bool redrawing;                 // next_frame was a redraw request
+    int64_t flip_count;
+    struct vo_frame* cur_frame;
+    struct mp_image_params img_params;
+    int vp_w, vp_h;
+    bool flip;
+    bool imgfmt_supported[IMGFMT_END - IMGFMT_START];
+    bool need_reconfig;
+    bool need_resize;
+    bool need_reset;
+    bool need_update_external;
+    struct vo* vo;
+
+    // --- Mostly immutable after init.
+    struct mp_hwdec_devices* hwdec_devs;
+
+    // --- All of these can only be accessed from mpv_render_*() API, for
+    //     which the user makes sure they're called synchronized.
+    struct render_backend* renderer;
+    struct m_config_cache* vo_opts_cache;
+    struct mp_vo_opts* vo_opts;
+};
+
+typedef struct d3d11_headless_priv {
+    int width;
+    int height;
+} d3d11_headless_priv;
+
+bool d3d11_headless_resize(struct ra_ctx* vo);
 
 IDXGISwapChain* mpv_get_swapchain(mpv_handle* ctx);
 

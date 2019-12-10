@@ -27,6 +27,9 @@
 #include "video/out/w32_common.h"
 #include "ra_d3d11.h"
 
+// from headless_helper
+bool d3d11_headless_resize(struct ra_ctx* vo);
+
 static int d3d11_validate_adapter(struct mp_log* log,
     const struct m_option* opt,
     struct bstr name, struct bstr param);
@@ -278,9 +281,11 @@ static void d3d11_get_vsync(struct ra_swapchain* sw, struct vo_vsync_info* info)
 
 static int d3d11_hl_control(struct ra_ctx* ctx, int* events, int request, void* arg)
 {
-    // TODO: bypass and generate resize event
-    //int ret = vo_w32_control(ctx->vo, events, request, arg);
-    if (*events & VO_EVENT_RESIZE) {
+    // TODO: bypass and generate resize event:
+    // update ctx->vo->dwidth and resize
+    if (d3d11_headless_resize(ctx)) {
+        // should resize
+        *events |= VO_EVENT_RESIZE;
         if (!resize(ctx))
             return VO_ERROR;
     }
