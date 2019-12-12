@@ -4,9 +4,7 @@
 #include "video/out/gpu/video.h"
 #include "video/out/libmpv.h"
 
-#include <windows.h>
-
-// TODO: this should be exposed to d3d11 context_headless, 
+// this should be exposed to d3d11 context_headless, 
 // and should be retrived when "control" method called.
 typedef struct d3d11_headless_priv {
     int width;
@@ -18,7 +16,6 @@ typedef struct d3d11_headless_priv {
 
 static int init(struct render_backend* ctx, mpv_render_param* params)
 {
-    MessageBox(NULL, L"libmpv_headless init", NULL, MB_OK);
     char* api = get_mpv_render_param(params, MPV_RENDER_PARAM_API_TYPE, NULL);
     if (!api) {
         return MPV_ERROR_INVALID_PARAMETER;
@@ -51,7 +48,7 @@ typedef struct render_size {
 } render_size;
 
 static int set_parameter(struct render_backend* ctx, mpv_render_param param) {
-    // TODO: use this method to update render size things.
+    // use this method to update render size things.
     render_size* new_size = param.data;
     d3d11_headless_priv* priv = ctx->priv;
     priv->width = new_size->width;

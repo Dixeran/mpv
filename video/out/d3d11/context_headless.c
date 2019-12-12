@@ -14,7 +14,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with mpv.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <windows.h>
 
 #include "common/msg.h"
 #include "options/m_config.h"
@@ -27,7 +26,7 @@
 #include "video/out/w32_common.h"
 #include "ra_d3d11.h"
 
-// from headless_helper
+ // from headless_helper
 bool d3d11_headless_resize(struct ra_ctx* vo);
 void d3d11_headless_swapchain_out(IDXGISwapChain* _swc, struct ra_ctx* _ra_ctx);
 
@@ -133,8 +132,6 @@ static bool resize(struct ra_ctx* ctx)
 
 static bool d3d11_hl_reconfig(struct ra_ctx* ctx)
 {
-    MessageBox(NULL, L"custom driver reconfig", NULL, MB_OK);
-    //vo_w32_config(ctx->vo);
     return resize(ctx);
 }
 
@@ -282,7 +279,7 @@ static void d3d11_get_vsync(struct ra_swapchain* sw, struct vo_vsync_info* info)
 
 static int d3d11_hl_control(struct ra_ctx* ctx, int* events, int request, void* arg)
 {
-    // TODO: bypass and generate resize event:
+    // generate resize event:
     // update ctx->vo->dwidth and resize
     if (d3d11_headless_resize(ctx)) {
         // should resize
@@ -300,8 +297,6 @@ static void d3d11_hl_uninit(struct ra_ctx* ctx)
     if (ctx->ra)
         ra_tex_free(ctx->ra, &p->backbuffer);
     SAFE_RELEASE(p->swapchain);
-    // TODO: bypass
-    //vo_w32_uninit(ctx->vo);
     SAFE_RELEASE(p->device);
 
     // Destory the RA last to prevent objects we hold from showing up in D3D's
@@ -320,9 +315,8 @@ static const struct ra_swapchain_fns d3d11_swapchain = {
 
 static bool d3d11_hl_init(struct ra_ctx* ctx)
 {
-    MessageBox(NULL, L"headless: init", NULL, MB_OK);
     struct priv* p = ctx->priv = talloc_zero(ctx, struct priv);
-    // TODO: hack this, bind to old conf
+
     p->opts = mp_get_config_group(ctx, ctx->global, &d3d11_conf);
 
     LARGE_INTEGER perf_freq;
@@ -343,7 +337,7 @@ static bool d3d11_hl_init(struct ra_ctx* ctx)
         .adapter_name = p->opts->adapter_name,
     };
 
-    // TODO: try to use native device, or bypass
+    // use native device
     if (!mp_d3d11_create_present_device(ctx->log, &dopts, &p->device))
         goto error;
 
@@ -352,10 +346,6 @@ static bool d3d11_hl_init(struct ra_ctx* ctx)
     ctx->ra = ra_d3d11_create(p->device, ctx->log, ctx->spirv);
     if (!ctx->ra)
         goto error;
-
-    //bypass vo_w32
-    //if (!vo_w32_init(ctx->vo))
-    //    goto error;
 
     struct d3d11_swapchain_opts scopts = {
         .window = NULL,
@@ -370,7 +360,7 @@ static bool d3d11_hl_init(struct ra_ctx* ctx)
         .length = ctx->vo->opts->swapchain_depth + 2,
         .usage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
     };
-    // TODO: use headless swc
+    // use headless swc
     if (!mp_d3d11_create_swapchain_headless(p->device, ctx->log, &scopts, &p->swapchain))
         goto error;
 
@@ -382,7 +372,6 @@ static bool d3d11_hl_init(struct ra_ctx* ctx)
     return true;
 
 error:
-    MessageBox(NULL, L"Init headless error", NULL, MB_OK);
     d3d11_hl_uninit(ctx);
     return false;
 }

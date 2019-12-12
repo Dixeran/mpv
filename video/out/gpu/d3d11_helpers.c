@@ -703,9 +703,7 @@ static HRESULT create_swapchain_headless(ID3D11Device* dev, IDXGIFactory2* facto
     desc.BufferCount = opts->length;
 
 
-    // TODO: replace this
-    //hr = IDXGIFactory2_CreateSwapChainForHwnd(factory, (IUnknown*)dev,
-    //    opts->window, &desc, NULL, NULL, &swapchain1);
+    // replace for haedless
     hr = IDXGIFactory2_CreateSwapChainForComposition(factory, (IUnknown*)dev, &desc, NULL, &swapchain1);
     if (FAILED(hr))
         goto done;
