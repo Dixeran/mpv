@@ -161,12 +161,18 @@ struct mpv_render_context {
     struct mp_vo_opts* vo_opts;
 };
 
+// same as priv in libmpv_d3d11_headless.c
 typedef struct d3d11_headless_priv {
     int width;
     int height;
+    // pointer to user's swapchain pointer
+    // IDXGISwapChain**
+    void* swc_out;
 } d3d11_headless_priv;
 
-bool d3d11_headless_resize(struct ra_ctx* vo);
+bool d3d11_headless_resize(struct ra_ctx* _ra_ctx);
+
+void d3d11_headless_swapchain_out(IDXGISwapChain* _swc, struct ra_ctx* _ra_ctx);
 
 IDXGISwapChain* mpv_get_swapchain(mpv_handle* ctx);
 

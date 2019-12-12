@@ -11,6 +11,9 @@
 typedef struct d3d11_headless_priv {
     int width;
     int height;
+    // pointer to user's swapchain pointer
+    // IDXGISwapChain**
+    void* swc_out;
 } d3d11_headless_priv;
 
 static int init(struct render_backend* ctx, mpv_render_param* params)
@@ -29,6 +32,11 @@ static int init(struct render_backend* ctx, mpv_render_param* params)
     d3d11_headless_priv* m_priv = ctx->priv;
     m_priv->width = 320;
     m_priv->height = 240;
+    
+    void* swc_out = get_mpv_render_param(params, MPV_RENDER_PARAM_OPENGL_INIT_PARAMS, NULL);
+    if (swc_out) {
+        m_priv->swc_out = swc_out;
+    }
     return 0;
 }
 

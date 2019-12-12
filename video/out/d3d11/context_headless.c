@@ -29,6 +29,7 @@
 
 // from headless_helper
 bool d3d11_headless_resize(struct ra_ctx* vo);
+void d3d11_headless_swapchain_out(IDXGISwapChain* _swc, struct ra_ctx* _ra_ctx);
 
 static int d3d11_validate_adapter(struct mp_log* log,
     const struct m_option* opt,
@@ -377,6 +378,7 @@ static bool d3d11_hl_init(struct ra_ctx* ctx)
     if (!p->backbuffer)
         goto error;
 
+    d3d11_headless_swapchain_out(p->swapchain, ctx);
     return true;
 
 error:
